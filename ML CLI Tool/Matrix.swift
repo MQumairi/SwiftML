@@ -6,11 +6,6 @@
 //
 
 //TODO:
-// - determinant
-// - matrix of minors
-// - matrix of cofactors
-// - inverse
-
 // - add Row
 // - remove Row
 // - add Column
@@ -42,6 +37,7 @@ class Matrix: CustomStringConvertible, Equatable {
         self.value = value
         self.shape = (self.value.count, self.value[0].count)
     }
+    
     //Description--- to override printing of the matrix
     var description: String {
         var desc = "\n"
@@ -112,7 +108,6 @@ class Matrix: CustomStringConvertible, Equatable {
             }
         }
         return outputMatrix
-        
     }
     
     //Scalar OP... takes an operation, a matrix, and a scalar. Outputs the matrix with that operation applied to all elements using the scalar.
@@ -154,6 +149,7 @@ class Matrix: CustomStringConvertible, Equatable {
         return outputMatrix
     }
     
+    //Take an operation and two list, and performs an operation on corresponding values of the two lists
     static func listOp (op: (Double, Double) -> Double, l1: [Double], l2: [Double]) -> [Double] {
         try! arrayEqualSize(l1: l1, l2: l2)
         var outputList : [Double] = []
@@ -163,10 +159,12 @@ class Matrix: CustomStringConvertible, Equatable {
         return outputList
     }
     
+    //Sum a list
     static func sum (l1: [Double]) -> Double {
         return l1.reduce(0, +)
     }
     
+    //Sum the values in a matrix
     static func sum (m1: Matrix) -> Double {
         var total = 0.0
         for (i, _) in m1.value.enumerated() {
@@ -200,24 +198,14 @@ class Matrix: CustomStringConvertible, Equatable {
         return randomArr
     }
     
-//    func determinant () -> Double {
-//        try! Matrix.matrixIsSquare(m1: self)
-//        let dim = self.shape.rows
-//        var output = 0.0
-//        let inputMatrix = self.value
-//        //If 2x2 matrix
-//        if (dim == 2) {
-//            output = (inputMatrix[0][0] * inputMatrix[1][1]) - (inputMatrix[0][1] * inputMatrix[1][0])
-//            return output
-//        } else {
-//            //Else
-//            let dimExtra = dim - 2
-//            var arrOfMinorDeterminants = []
-//
-//        }
-//    }
+    //Given a Matrix, return its determinant
+    static func determinant (matrix: Matrix) -> Double {
+        try! Matrix.matrixIsSquare(m1: matrix)
+        return calcDeterminant(m1: matrix, dim: matrix.shape.rows)
+    }
     
-    static func determinant (m1: Matrix, dim: Int, toReturn: Double = 0.0) -> Double {
+    //Does the determinant calculation recursively
+    static func calcDeterminant (m1: Matrix, dim: Int, toReturn: Double = 0.0) -> Double {
         //Check that the matix is a square
         try! Matrix.matrixIsSquare(m1: m1)
         //Initialize Output
@@ -231,12 +219,7 @@ class Matrix: CustomStringConvertible, Equatable {
             var arrOfMinorDeterminants: [Double] = []
             for (i, value) in m1.value[0].enumerated() {
                 let minorMatrix = Matrix.minorMatrix(m1: m1, row: 0, column: i)
-//                if (additionsToOutput % 2 == 0) {
-//                    output += value * determinant(m1: minorMatrix, dim: dim-1, toReturn: output, additionsToOutput: additionsToOutput + 1)
-//                } else {
-//                    output -= value * determinant(m1: minorMatrix, dim: dim-1, toReturn: output, additionsToOutput: additionsToOutput + 1)
-//                }
-                let minorDeterminant = value * determinant(m1: minorMatrix, dim: dim-1, toReturn: output)
+                let minorDeterminant = value * calcDeterminant(m1: minorMatrix, dim: dim-1, toReturn: output)
                 arrOfMinorDeterminants.append(minorDeterminant)
             }
             for (i, value) in arrOfMinorDeterminants.enumerated() {
@@ -247,10 +230,11 @@ class Matrix: CustomStringConvertible, Equatable {
                 }
             }
         }
-//        print(output)
         return output
     }
     
+    //Given a matrix, and the row-column coordinates of a value v, create the minor matrix
+    //minor matrix is original excluding the row and column that v is in
     static func minorMatrix (m1: Matrix, row: Int, column: Int) -> Matrix {
         var outputValue = m1.value
         outputValue.remove(at: row)
@@ -259,6 +243,55 @@ class Matrix: CustomStringConvertible, Equatable {
             outputValue[i].remove(at: column)
         }
         return Matrix(value: outputValue)
+    }
+    
+    //Given a matrix, output the matrix of minors.
+    // - Go through each element
+    // - mm = minorMatrix(elementrow, elementcol)
+    // - d = determinant(mm)
+    // - place d in ouput at position elementrow elementcol
+    static func matrixOfMinors (matrix: Matrix) -> Matrix {
+        try! Matrix.matrixIsSquare(m1: matrix)
+        let outputMatrix = zeros(rows: matrix.shape.rows, columns: matrix.shape.columns)
+        for (i, _) in matrix.value.enumerated() {
+            for (j, _) in matrix.value[i].enumerated() {
+                let mm = minorMatrix(m1: matrix, row: i, column: j)
+                var d = determinant(matrix: mm)
+                d = d == -0.0 ? 0.0 : d
+                outputMatrix.value[i][j] = d
+            }
+        }
+        return outputMatrix
+    }
+    
+    //Given a matrix output the matrix of cofactors.
+    // - iterate over every element.
+    // - for every second element, multiply it by -1
+    static func matrixOfCofactors (matrix: Matrix) -> Matrix {
+        let outputMatrix = matrix
+        for (i, _) in matrix.value.enumerated() {
+            for (j, _) in matrix.value[i].enumerated() {
+                if (i % 2 == 0 && j % 2 == 1 || i % 2 == 1 && j % 2 == 0) {
+                    outputMatrix.value[i][j] = matrix.value[i][j] * -1
+                }
+            }
+        }
+        return outputMatrix
+    }
+    
+    //Given a matrix, output its inverse
+    // - calculate matrixOfMinors
+    // - calculate matrixOfCofactors
+    // - transpose
+    // - multiple this result with 1/d, where d is the determinant of the input matrix
+    static func inverse (matrix: Matrix) -> Matrix {
+        try! Matrix.matrixIsSquare(m1: matrix)
+        let mm = matrixOfMinors(matrix: matrix)
+        let mc = matrixOfCofactors(matrix: mm)
+        let mcT = mc.T
+        let d = determinant(matrix: matrix)
+        let outputMatrix = mcT * (1 / d)
+        return outputMatrix
     }
         
     //Takes a function f (that takes one or more doubles, and returns a double), and a Matrix.

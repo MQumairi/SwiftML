@@ -24,22 +24,24 @@ var d2 : Matrix = Matrix(value: [[1, 3, 2], [-3, -1, -3], [2, 3, 1]])
 var d3 : Matrix = Matrix(value: [[-5, 0, -1], [1, 2, -1], [-3, 4, 1]])
 var d4 : Matrix = Matrix(value: [[6, 1, 1, 4, 6], [5, 6, 7, 8, 6], [9, 8, 11, 12, 6], [13, 14, 15, 16, 6], [6, 6, 6, 6, 6]])
 
+var i1 : Matrix = Matrix(value: [[3, 0, 2], [2, 0, -2], [0, 1, 1]])
 
 
+var mm = Matrix.matrixOfMinors(matrix: i1)
 
 
-
+print(mm)
+print(Matrix.inverse(matrix: d4))
 //let zs = Matrix.zeros(m: 5, n: 3)
-//print(Matrix.elewiseOp(op: +, m1: test1, m2: test2)!)
 
 //print(m3)
 //print(m3.T)
 //print(m3)
 
-print(Matrix.determinant(m1: d1, dim: 3))
-print(Matrix.determinant(m1: d2, dim: 3))
-print(Matrix.determinant(m1: d3, dim: 3))
-print(Matrix.determinant(m1: d4, dim: 5))
+//print(Matrix.determinant(matrix: d1))
+//print(Matrix.determinant(m1: d2, dim: 3))
+//print(Matrix.determinant(m1: d3, dim: 3))
+//print(Matrix.determinant(m1: d4, dim: 5))
 
 //
 //print(Matrix.determinant(m1: Matrix.minorMatrix(m1: d1, row: 0, column: 0), dim: 2))
@@ -58,5 +60,7 @@ print(Matrix.determinant(m1: d4, dim: 5))
 //var hugrMatrix = Matrix.zeros(m: 10000, n: 30)
 
 //print(hugrMatrix + 2)
+
+
 
 
