@@ -61,11 +61,19 @@
 		4C4D80A125AB67F40098F8B9 /* ML CLI Tool */ = {
 			isa = PBXGroup;
 			children = (
+				4CAE421125ADF6DA00FD8CFF /* Matrices */,
 				4C4D80A225AB67F40098F8B9 /* main.swift */,
+			);
+			path = "ML CLI Tool";
+			sourceTree = "<group>";
+		};
+		4CAE421125ADF6DA00FD8CFF /* Matrices */ = {
+			isa = PBXGroup;
+			children = (
 				4C4D80AA25AB680C0098F8B9 /* Matrix.swift */,
 				4C4D80AE25AB8D2C0098F8B9 /* MatrixOperations.swift */,
 			);
-			path = "ML CLI Tool";
+			path = Matrices;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

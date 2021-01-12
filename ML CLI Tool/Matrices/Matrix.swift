@@ -14,7 +14,7 @@ class Matrix: CustomStringConvertible, Equatable {
     lazy var T: Matrix = self.transpose() //Lazy to not perform the transformation before prop is called
     
     //Initializer
-    init(value: [[Double]]) {
+    init(_ value: [[Double]]) {
         try! Matrix.checkMalformation(arr: value)
         self.value = value
         self.shape = (self.value.count, self.value[0].count)
@@ -139,7 +139,7 @@ class Matrix: CustomStringConvertible, Equatable {
             arr2.append(self.value[i])
             i += 1
         }
-        return (Matrix(value: arr1), Matrix(value: arr2))
+        return (Matrix(arr1), Matrix(arr2))
     }
     
     //Split a Matrix by column at the specified position, into two matrices
@@ -266,7 +266,7 @@ class Matrix: CustomStringConvertible, Equatable {
             arr.append(zerosArrN)
             i+=1
         }
-        return Matrix(value: arr)
+        return Matrix(arr)
     }
     
     //Takes in an m and an n, (and optionally, a range) outputs a matrix of random values within that range
@@ -325,7 +325,7 @@ class Matrix: CustomStringConvertible, Equatable {
         for (i, _) in outputValue.enumerated() {
             outputValue[i].remove(at: column)
         }
-        return Matrix(value: outputValue)
+        return Matrix(outputValue)
     }
     
     //Given a matrix, output the matrix of minors.
