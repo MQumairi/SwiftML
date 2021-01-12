@@ -3,15 +3,6 @@
 //  ML CLI Tool
 //
 //  Created by Mohammed Alqumairi on 10/01/2021.
-//
-
-//TODO:
-// - add Row
-// - remove Row
-// - add Column
-// - remove Column
-// - split Matrix by row
-// - split Matrix by column
 
 import Foundation
 
@@ -24,16 +15,7 @@ class Matrix: CustomStringConvertible, Equatable {
     
     //Initializer
     init(value: [[Double]]) {
-        let firstRowLength = value[0].count
-        var malFormed = false
-        for row in value {
-            if (row.count != firstRowLength) {
-                malFormed = true
-            }
-        }
-        if (malFormed) {
-            print("CAUTION: this Matrix is malformed.")
-        }
+        try! Matrix.checkMalformation(arr: value)
         self.value = value
         self.shape = (self.value.count, self.value[0].count)
     }
@@ -85,7 +67,7 @@ class Matrix: CustomStringConvertible, Equatable {
         return self
     }
     
-    //Returns a matrix equivalent to the matrix of self
+    //Returns a matrix equivalent to the transpose of self
     func transpose () -> Matrix {
         let outputMatrix = Matrix.zeros(rows: self.shape.columns, columns: self.shape.rows)
         for (i, _) in value.enumerated() {
@@ -98,7 +80,7 @@ class Matrix: CustomStringConvertible, Equatable {
     
     //self.dot(m2) results in the dot product of self with m2 (where self and m2 are matrices of dotable dimensions)
     func dot (m2: Matrix) -> Matrix {
-        try! Matrix.shapesDotable(m1: self, m2: m2)
+        try! Matrix.checkShapesDotable(m1: self, m2: m2)
         let outputMatrix = Matrix.zeros(rows: self.shape.rows, columns: m2.shape.columns)
         let m2Transpose = m2.T
         for (i, _) in value.enumerated() {
@@ -110,7 +92,108 @@ class Matrix: CustomStringConvertible, Equatable {
         return outputMatrix
     }
     
-    //Scalar OP... takes an operation, a matrix, and a scalar. Outputs the matrix with that operation applied to all elements using the scalar.
+    //Add a row to the matrix, at the specified position
+    func addRow (row: [Double], at: Int) -> Matrix {
+        try! Matrix.checkArrayToAddCorrectSize(length1: value[0].count, length2: row.count)
+        value.insert(row, at: at)
+        shape.rows += 1
+        return self
+    }
+    
+    //Remove a row from the matrix, from the specified position
+    func removeRow (at: Int) -> Matrix {
+        value.remove(at: at)
+        shape.rows -= 1
+        return self
+    }
+    
+    //Add a column to the matrix, at the  specfied position
+    func addColumn (column: [Double], at: Int) -> Matrix {
+        try! Matrix.checkArrayToAddCorrectSize(length1: self.shape.rows, length2: column.count)
+        for (i, _) in value.enumerated() {
+            value[i].insert(column[i], at: at)
+        }
+        shape.columns += 1
+        return self
+    }
+    
+    //Remove a column from the matrix, at the specified position
+    func removeColumn (at: Int) -> Matrix {
+        for (i, _) in value.enumerated() {
+            value[i].remove(at: at)
+        }
+        shape.columns -= 1
+        return self
+    }
+    
+    //Split a Matrix by row at the specifeid position, into two matrices,
+    func splitByRow (at: Int) -> (Matrix, Matrix) {
+        var arr1 : [[Double]] = []
+        var arr2 : [[Double]] = []
+        var i = 0
+        while i < (at) {
+            arr1.append(self.value[i])
+            i += 1
+        }
+        while i < (self.shape.columns) {
+            arr2.append(self.value[i])
+            i += 1
+        }
+        return (Matrix(value: arr1), Matrix(value: arr2))
+    }
+    
+    //Split a Matrix by column at the specified position, into two matrices
+    func splitByColumn (at: Int) -> (Matrix, Matrix) {
+        let m1 : Matrix = Matrix.zeros(rows: self.shape.columns, columns: at)
+        let m2 : Matrix = Matrix.zeros(rows: self.shape.columns, columns: self.shape.columns - at)
+        
+        for (i, _) in self.value.enumerated() {
+            var j = 0
+            var k = 0
+            
+            while j < (self.shape.columns) {
+                if j < at {
+                    m1.value[i][j] = self.value[i][j]
+                } else {
+                    m2.value[i][k] = self.value[i][j]
+                    k += 1
+                }
+                j += 1
+            }
+        }
+        return (m1, m2)
+    }
+    
+    //Join self with another matrix (combine horizontally)
+    func join (with: Matrix) -> Matrix {
+        try! Matrix.checkRowsEqual(m1: self, m2: with)
+        let outputMatrix = self
+        for (i, _) in outputMatrix.value.enumerated() {
+            for (j, _) in with.value[i].enumerated() {
+                outputMatrix.value[i].append(with.value[i][j])
+            }
+        }
+        outputMatrix.shape.columns = with.shape.columns + self.shape.columns
+        return outputMatrix
+    }
+    
+    //Stack self ontop of another matrix (combine vertically)
+    func stack (on: Matrix) -> Matrix {
+        try! Matrix.checkColumnsEqual(m1: self, m2: on)
+        let outputMatrix = self
+        for (i, _) in on.value.enumerated() {
+            outputMatrix.value.append(on.value[i])
+        }
+        outputMatrix.shape.rows = on.shape.rows + self.shape.rows
+        return outputMatrix
+    }
+    
+    //*********************
+    //* STATIC FUNCTIONS *
+    //*********************
+
+    //Scalar OP... takes an operation, a matrix, and a scalar.
+    //Outputs the matrix with that operation applied to all elements using the scalar.
     static func scalarOp (op: (Double, Double) -> Double, matrix: Matrix, scalar: Double, scalarSide: String="right") -> Matrix {
         let outputMatrix = Matrix.zeros(rows: matrix.shape.rows, columns: matrix.shape.columns)
         for (i, _) in matrix.value.enumerated() {
@@ -125,9 +208,9 @@ class Matrix: CustomStringConvertible, Equatable {
         return outputMatrix
     }
 
-    //Elewise OP... takes an operation, and two matrices, and performs an elewise multiplication on them
+    //Elewise OP... takes an operation, and two matrices, and performs the operation on the two matrices elewise
     static func elewiseOp (op: (Double, Double) -> Double, m1: Matrix, m2: Matrix) -> Matrix {
-        try! Matrix.shapesEqual(m1: m1, m2: m2)
+        try! Matrix.checkShapesEqual(m1: m1, m2: m2)
         let outputMatrix = Matrix.zeros(rows: m1.shape.rows, columns: m1.shape.columns)
         //If the second matrix is a vector...
         if (m2.shape.columns == 1) {
@@ -149,9 +232,9 @@ class Matrix: CustomStringConvertible, Equatable {
         return outputMatrix
     }
     
-    //Take an operation and two list, and performs an operation on corresponding values of the two lists
+    //Take an operation and two lists, and performs an operation on corresponding values of the two lists
     static func listOp (op: (Double, Double) -> Double, l1: [Double], l2: [Double]) -> [Double] {
-        try! arrayEqualSize(l1: l1, l2: l2)
+        try! checkArrayEqualSize(l1: l1, l2: l2)
         var outputList : [Double] = []
         for (i, _) in l1.enumerated() {
             outputList.append(op(l1[i], l2[i]))
@@ -200,14 +283,14 @@ class Matrix: CustomStringConvertible, Equatable {
     
     //Given a Matrix, return its determinant
     static func determinant (matrix: Matrix) -> Double {
-        try! Matrix.matrixIsSquare(m1: matrix)
+        try! Matrix.checkMatrixIsSquare(m1: matrix)
         return calcDeterminant(m1: matrix, dim: matrix.shape.rows)
     }
     
     //Does the determinant calculation recursively
     static func calcDeterminant (m1: Matrix, dim: Int, toReturn: Double = 0.0) -> Double {
         //Check that the matix is a square
-        try! Matrix.matrixIsSquare(m1: m1)
+        try! Matrix.checkMatrixIsSquare(m1: m1)
         //Initialize Output
         var output = toReturn
         //Base case: If 2x2 Matrix
@@ -251,7 +334,7 @@ class Matrix: CustomStringConvertible, Equatable {
     // - d = determinant(mm)
     // - place d in ouput at position elementrow elementcol
     static func matrixOfMinors (matrix: Matrix) -> Matrix {
-        try! Matrix.matrixIsSquare(m1: matrix)
+        try! Matrix.checkMatrixIsSquare(m1: matrix)
         let outputMatrix = zeros(rows: matrix.shape.rows, columns: matrix.shape.columns)
         for (i, _) in matrix.value.enumerated() {
             for (j, _) in matrix.value[i].enumerated() {
@@ -285,7 +368,7 @@ class Matrix: CustomStringConvertible, Equatable {
     // - transpose
     // - multiple this result with 1/d, where d is the determinant of the input matrix
     static func inverse (matrix: Matrix) -> Matrix {
-        try! Matrix.matrixIsSquare(m1: matrix)
+        try! Matrix.checkMatrixIsSquare(m1: matrix)
         let mm = matrixOfMinors(matrix: matrix)
         let mc = matrixOfCofactors(matrix: mm)
         let mcT = mc.T
@@ -294,16 +377,35 @@ class Matrix: CustomStringConvertible, Equatable {
         return outputMatrix
     }
         
-    //Takes a function f (that takes one or more doubles, and returns a double), and a Matrix.
-    //Maps f to each value in the matrix
+    //*****************
+    //* MATRIX ERRORS *
+    //*****************
+    
     enum MatrixError: Error {
+        case matrixMalformed
         case shapeMismatch(matrixShape:(Int, Int), expectedShape:(Int, Int))
         case arrayLengthMismatch(arrayLength: Int, expectedLength: Int)
         case notSquareMatrix(matrixShape:(Int, Int))
+        case rowsMismatch(rowsLength: Int, expectedLength: Int)
+        case columnsMismatch(columnLength: Int, expectedLength: Int)
+    }
+    
+    //Checks that all inner arrays, in a 2D array of Doubles, are of equal size. Else throws error.
+    static func checkMalformation (arr: [[Double]]) throws {
+        if (arr.count == 0) {
+            return
+        }
+        let sizeOfFirstArr = arr[0].count
+        for (i, _) in arr.enumerated() {
+            if (arr[i].count != sizeOfFirstArr) {
+                print("The inputted array is malformed. All rows need to be of equal length.")
+                throw MatrixError.matrixMalformed
+            }
+        }
     }
     
     //Checks that two matrix shapes are equal, or that the second is a vector. Else throws error.
-    static func shapesEqual (m1: Matrix, m2: Matrix) throws {
+    static func checkShapesEqual (m1: Matrix, m2: Matrix) throws {
         if (m1.shape != m2.shape && m2.shape.columns != 1) {
             print("Matrix shapes mismatch. First matrix has shape ", m1.shape, ", whereas second has shape ", m2.shape)
             throw MatrixError.shapeMismatch(matrixShape: m2.shape, expectedShape: m1.shape)
@@ -311,7 +413,7 @@ class Matrix: CustomStringConvertible, Equatable {
     }
     
     //Checks that two matrix shapes are dotable (i.e. a x n and n x b). Else throws error.
-    static func shapesDotable (m1: Matrix, m2: Matrix) throws {
+    static func checkShapesDotable (m1: Matrix, m2: Matrix) throws {
         if (m1.shape.columns != m2.shape.rows) {
             print("Matrix shapes mismatch. First matrix has shape ", m1.shape, ", whereas second has shape ", m2.shape)
             throw MatrixError.shapeMismatch(matrixShape: m2.shape, expectedShape: (m1.shape.columns, m2.shape.columns))
@@ -319,7 +421,7 @@ class Matrix: CustomStringConvertible, Equatable {
     }
     
     //Checks that two matrix shapes are reversed (i.e. m x n and n x m). Else throws error.
-    static func shapesReversed (m1: Matrix, m2: Matrix) throws {
+    static func checkShapesReversed (m1: Matrix, m2: Matrix) throws {
         if (m1.shape.rows != m2.shape.columns || m1.shape.columns != m2.shape.rows) {
             print("Matrix shapes mismatch. First matrix has shape ", m1.shape, ", whereas second has shape ", m2.shape)
             throw MatrixError.shapeMismatch(matrixShape: m2.shape, expectedShape: (m1.shape.columns, m1.shape.rows))
@@ -327,20 +429,48 @@ class Matrix: CustomStringConvertible, Equatable {
     }
     
     //Checks that two arrays are of equal size. Else throws error.
-    static func arrayEqualSize (l1: [Double], l2: [Double]) throws {
+    static func checkArrayEqualSize (l1: [Double], l2: [Double]) throws {
         if (l1.count != l2.count) {
             print("Aarrays are not of equal length. First array has length ", l1.count, ", whereas second has length ", l2.count)
             throw MatrixError.arrayLengthMismatch(arrayLength: l2.count, expectedLength: l1.count)
         }
     }
     
+    //Check if the two numbers representing the length of an array are the same. Else , throws error
+    static func checkArrayToAddCorrectSize (length1: Int, length2: Int) throws {
+        if (length1 != length2) {
+            print("The row or column you're trying to add is of incorrect length", length2, "expected", length1)
+            throw MatrixError.arrayLengthMismatch(arrayLength: length2, expectedLength: length1)
+        }
+    }
+    
+    //Checks that two matrices have the same number of rows. Else throws error.
+    static func checkRowsEqual (m1: Matrix, m2: Matrix) throws {
+        if (m1.shape.rows != m2.shape.rows) {
+            print("Matrix have different number of rows. First matrix has", m1.shape.rows, "rows, whereas second has", m2.shape.rows, "rows")
+            throw MatrixError.shapeMismatch(matrixShape: m2.shape, expectedShape: m1.shape)
+        }
+    }
+    
+    //Checks that two matrices have the same number of columns. Else throws error.
+    static func checkColumnsEqual (m1: Matrix, m2: Matrix) throws {
+        if (m1.shape.columns != m2.shape.columns) {
+            print("Matrix have different number of columns. First matrix has", m1.shape.columns, "rows, whereas second has", m2.shape.columns, "columns")
+            throw MatrixError.shapeMismatch(matrixShape: m2.shape, expectedShape: m1.shape)
+        }
+    }
+    
     //Checks that matrix is a square
-    static func matrixIsSquare (m1: Matrix) throws {
+    static func checkMatrixIsSquare (m1: Matrix) throws {
         if (m1.shape.rows != m1.shape.columns){
             print("Matrix not a square. Has shape ", m1.shape)
             throw MatrixError.notSquareMatrix(matrixShape: m1.shape)
         }
     }
+    
+    //***********************
+    //* PROTOCOL COMFORMING *
+    //***********************
     
     //Conforming to Equitable Protocol
     static func == (lhs: Matrix, rhs: Matrix) -> Bool {

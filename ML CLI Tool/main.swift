@@ -14,6 +14,7 @@ var m3 : Matrix = Matrix(value: [[1, 3], [3, 2], [6, 1]])
 
 var m4 : Matrix = Matrix(value: [[1, 2, 3], [4, 5, 6]])
 var m5 : Matrix = Matrix(value: [[7, 8], [9, 10], [11, 12]])
+var m6 : Matrix = Matrix(value: [[7], [7], [7]])
 
 
 var v1 : Matrix = Matrix(value: [[1, 2, 3]])
@@ -26,12 +27,23 @@ var d4 : Matrix = Matrix(value: [[6, 1, 1, 4, 6], [5, 6, 7, 8, 6], [9, 8, 11, 12
 
 var i1 : Matrix = Matrix(value: [[3, 0, 2], [2, 0, -2], [0, 1, 1]])
 
+//print(i1.addRow(row: [0, 1, 1], at: 1))
+//print(i1.shape)
+//print(i1.removeRow(at: 0))
+//print(i1.shape)
+//print(i1.removeColumn(at: 1))
+//print(i1.shape)
+//print(i1.addColumn(column: [0, 1, 1], at: 2))
 
-var mm = Matrix.matrixOfMinors(matrix: i1)
+print(m1)
+print(m2)
+
+let mJoined = m1.stack(on: m2)
+print(mJoined)
+print(mJoined.shape)
 
 
-print(mm)
-print(Matrix.inverse(matrix: d4))
+
 //let zs = Matrix.zeros(m: 5, n: 3)
 
 //print(m3)
